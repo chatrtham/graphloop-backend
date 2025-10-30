@@ -25,7 +25,7 @@ Before creating any files, **always search the file system** for existing LangGr
 - **NEVER ADD A CHECKPOINTER** unless explicitly requested by user
 - Always export compiled final graph as `app`
 - Use prebuilt components when possible
-- Always use the model gemini-2.5-flash if LLM is needed
+- Always use the model GLM-4.6 if LLM is needed
 - Keep state minimal
 
 #### AVOID checkpointer and MemorySaver
@@ -82,12 +82,16 @@ graph = create_react_agent(
 
 **LLM MODEL**:
 ```python
-# Always use: Google gemini-2.5-flash
-from langchain_google_genai import ChatGoogleGenerativeAI
+# Always use: ZAI GLM-4.6 model for LLM tasks
+from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 load_dotenv()  # Load API keys from .env
 
-model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+model = ChatOpenAI(
+    model="glm-4.6",
+    openai_api_key=os.getenv("ZAI_API_KEY"),
+    openai_api_base="https://api.z.ai/api/coding/paas/v4/"
+)
 ```
 
 **NOTE**: Assume API keys are available in environment.
@@ -204,7 +208,7 @@ if __name__ == "__main__":
         print(f"- {item}")
 ```
 
-- **Workflow nodes should process data**, not format output
+- **Workflow nodes should process data**, not format printing output
 - **Use test blocks for displaying results** to yourself during development
 - **Keep workflows focused** on actual data transformation and business logic
 - **Handle output formatting** in `__name__ == "__main__"` or wherever you invoke the workflow
@@ -251,10 +255,9 @@ if __name__ == "__main__":
             print(f"Error in test case {i+1}: {e}")
 ```
 
-```bash
-# Run the agent file directly to execute tests
-uv run python src/agent.py
-```
+### Run the code:
+- Use `python_code_executor` tool to run the code
+- **Execution Environment**: Code runs in async sandbox with existing event loop - use await directly, avoid asyncio.run() and nest_asyncio workarounds
 
 - Verify all test cases pass without errors
 - Check that outputs match expected behavior
@@ -323,10 +326,14 @@ Use when you need an LLM to intelligently select and use guMCP tools:
 
 ```python
 from langgraph.prebuilt import create_react_agent
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 
 # Create agent with guMCP tools
-model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+model = ChatOpenAI(
+    model="glm-4.6",
+    openai_api_key=os.getenv("ZAI_API_KEY"),
+    openai_api_base="https://api.z.ai/api/coding/paas/v4/"
+)
 
 # Get all available tools from guMCP
 all_tools = await client.get_tools()

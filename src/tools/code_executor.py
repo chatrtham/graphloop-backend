@@ -1,24 +1,43 @@
 """Code execution tool for running Python code in sandbox."""
 
 from src.core.sandbox import run_python_code
-
+from deepagents import DeepAgentState
+from langchain_core.messages import ToolMessage
+from langchain_core.tools import InjectedToolCallId, tool
+from langgraph.prebuilt import InjectedState
+from langgraph.types import Command
+from typing import Annotated
 
 # Tool function for agent
-async def python_code_executor(code: str) -> str:
+@tool
+async def python_code_executor(
+    file_name: str,
+    state: Annotated[DeepAgentState, InjectedState],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+):
     """
     Execute Python code in a secure sandbox environment.
 
     Args:
-        code (str): Python code to execute
-
+        file_name (str): The name of the file containing the code to execute e.g., "agent.py".
     Returns:
-        str: Execution output or error message
+        result (str): The output from executing the code.
     """
+    code = state.get("files", {}).get(file_name)
     try:
         result = await run_python_code(code)
-        return result
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        f"{result}",
+                        tool_call_id=tool_call_id, 
+                    )
+                ]
+            }
+        )
     except Exception as e:
-        return f"Error executing code: {str(e)}"
+        return f"Error executing code: {e}"
 
 
 # Export the tool function
